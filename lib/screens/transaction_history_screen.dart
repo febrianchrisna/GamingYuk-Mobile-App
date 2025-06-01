@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:toko_game/models/transaction_model.dart';
 import 'package:toko_game/providers/auth_provider.dart';
+import 'package:toko_game/providers/time_zone_provider.dart';
 import 'package:toko_game/services/api_service.dart';
 import 'package:toko_game/utils/constants.dart';
 import 'package:toko_game/widgets/transaction_detail_view.dart';
@@ -533,6 +534,15 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   }
 
   Widget _buildTransactionCard(TransactionModel transaction) {
+    final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
+
+    // Convert transaction date to selected time zone
+    final utcDate = transaction.createdAt.toUtc();
+    final offset =
+        timeZoneProvider.timeZoneOffsets[timeZoneProvider.selectedTimeZone] ??
+            7;
+    final localDate = utcDate.add(Duration(hours: offset));
+
     // Get status color
     Color statusColor;
     switch (transaction.status.toLowerCase()) {
@@ -582,7 +592,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    DateFormat('dd MMM yyyy').format(transaction.createdAt),
+                    DateFormat('dd MMM yyyy').format(localDate),
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,

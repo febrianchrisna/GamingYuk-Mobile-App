@@ -297,8 +297,7 @@ class DatabaseHelper {
 
     try {
       final db = await database;
-
-      // Try to create the cart table if it doesn't exist (simpler approach)
+      
       await db.execute('''
         CREATE TABLE IF NOT EXISTS cart (
           id INTEGER PRIMARY KEY AUTOINCREMENT,

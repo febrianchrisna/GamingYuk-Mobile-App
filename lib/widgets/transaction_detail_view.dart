@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:toko_game/models/transaction_model.dart';
+import 'package:toko_game/providers/time_zone_provider.dart';
 
 class TransactionDetailView extends StatelessWidget {
   final TransactionModel transaction;
@@ -17,9 +19,18 @@ class TransactionDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Format date
-    final formattedDate =
-        DateFormat('dd MMM yyyy, HH:mm').format(transaction.createdAt);
+    final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
+
+    // Convert transaction date to selected time zone
+    final utcDate = transaction.createdAt.toUtc();
+    final offset =
+        timeZoneProvider.timeZoneOffsets[timeZoneProvider.selectedTimeZone] ??
+            7;
+    final localDate = utcDate.add(Duration(hours: offset));
+
+    // Format date with time zone info
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(localDate);
+    final timeZoneInfo = ' ${timeZoneProvider.selectedTimeZone}';
 
     // Get delivery type flags
     final isDigital = transaction.deliveryType.toLowerCase() == 'digital';
@@ -90,7 +101,7 @@ class TransactionDetailView extends StatelessWidget {
                 children: [
                   // Order details section
                   _buildInfoRow('Order ID', '#${transaction.id}'),
-                  _buildInfoRow('Date', formattedDate),
+                  _buildInfoRow('Date', '$formattedDate$timeZoneInfo'),
                   _buildInfoRow('Payment Method', transaction.paymentMethod),
                   _buildStatusRow('Status', transaction.status, statusColor),
 
@@ -375,24 +386,103 @@ class TransactionDetailView extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.gamepad_outlined,
-                  size: 16,
-                  color: Colors.grey,
+                const Text(
+                  'Steam ID: ',
+                  style: TextStyle(fontWeight: FontWeight.w500),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Steam ID: $steamId',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+                Text(steamId),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper method to build info row
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper method to build status row
+  Widget _buildStatusRow(String label, String value, Color color) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                value.toUpperCase(),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGameTag(String text, Color color) {
+    return Container(
+      margin: const EdgeInsets.only(right: 6, bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -402,10 +492,7 @@ class TransactionDetailView extends StatelessWidget {
     return Container(
       width: 60,
       height: 60,
-      decoration: BoxDecoration(
-        color: _getRandomColor(title),
-        borderRadius: BorderRadius.circular(8),
-      ),
+      color: _getColorFromName(title),
       child: Center(
         child: Text(
           _getInitials(title),
@@ -424,8 +511,6 @@ class TransactionDetailView extends StatelessWidget {
     if (name.isEmpty) return '?';
 
     final words = name.trim().split(' ');
-    if (words.isEmpty) return '?';
-
     if (words.length == 1) {
       return words[0].substring(0, math.min(2, words[0].length)).toUpperCase();
     }
@@ -435,104 +520,13 @@ class TransactionDetailView extends StatelessWidget {
             .toUpperCase();
   }
 
-  // Helper method to get a random color based on a string
-  Color _getRandomColor(String input) {
-    final int hash = input.codeUnits.fold(0, (prev, element) => prev + element);
+  // Helper method to get color based on game name
+  Color _getColorFromName(String name) {
+    if (name.isEmpty) return Colors.grey;
+
+    final int hash = name.codeUnits.fold(0, (prev, element) => prev + element);
     final hue = (hash % 360).toDouble();
-    return HSVColor.fromAHSV(1.0, hue, 0.7, 0.85).toColor();
-  }
 
-  // Helper to build info rows
-  Widget _buildInfoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Helper to build status row with color
-  Widget _buildStatusRow(String label, String value, Color statusColor) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                color: Colors.grey[700],
-              ),
-            ),
-          ),
-          // Fix the status container to fit content width properly
-          Wrap(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  value.toUpperCase(),
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGameTag(String text, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(right: 4, top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 10,
-          color: color,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
+    return HSVColor.fromAHSV(1.0, hue, 0.8, 0.8).toColor();
   }
 }
