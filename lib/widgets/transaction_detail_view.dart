@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:toko_game/models/transaction_model.dart';
 import 'package:toko_game/providers/time_zone_provider.dart';
+import 'package:toko_game/providers/currency_provider.dart';
 
 class TransactionDetailView extends StatelessWidget {
   final TransactionModel transaction;
@@ -20,6 +21,7 @@ class TransactionDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
 
     // Convert transaction date to selected time zone
     final utcDate = transaction.createdAt.toUtc();
@@ -57,13 +59,6 @@ class TransactionDetailView extends StatelessWidget {
       default:
         statusColor = Colors.blue;
     }
-
-    // Format currency
-    final currencyFormat = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
 
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -185,8 +180,23 @@ class TransactionDetailView extends StatelessWidget {
                                   ),
                                 ),
 
-                                // Remove price display since it's showing Rp 0
-                                // If you want to show prices later when fixed, replace this comment
+                                // Price display with currency conversion
+                                if (game.price > 0)
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        currencyProvider.formatPrice(
+                                            currencyProvider.convertPrice(
+                                                game.price * game.quantity)),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Colors.deepPurple,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                               ],
                             ),
                           ))
@@ -206,7 +216,8 @@ class TransactionDetailView extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        currencyFormat.format(transaction.totalAmount),
+                        currencyProvider.formatPrice(currencyProvider
+                            .convertPrice(transaction.totalAmount)),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -470,17 +481,17 @@ class TransactionDetailView extends StatelessWidget {
 
   Widget _buildGameTag(String text, Color color) {
     return Container(
-      margin: const EdgeInsets.only(right: 6, bottom: 4),
+      margin: const EdgeInsets.only(right: 4, bottom: 4),
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         text,
         style: TextStyle(
+          fontSize: 10,
           color: color,
-          fontSize: 11,
           fontWeight: FontWeight.w500,
         ),
       ),

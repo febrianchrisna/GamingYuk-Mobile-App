@@ -428,19 +428,32 @@ class _CurrencyConverterScreenState extends State<CurrencyConverterScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey[300]!),
               ),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(
-                    Icons.info_outline,
-                    color: AppColors.primaryColor,
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Current app currency: ${currencyProvider.selectedCurrency}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.info_outline,
+                        color: AppColors.primaryColor,
                       ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Current app currency: ${currencyProvider.selectedCurrency}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'All prices in the app will be displayed in ${currencyProvider.selectedCurrency}. This includes order history, cart items, and game prices.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
                     ),
                   ),
                 ],

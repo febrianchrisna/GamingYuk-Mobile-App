@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:toko_game/models/transaction_model.dart';
 import 'package:toko_game/providers/auth_provider.dart';
 import 'package:toko_game/providers/time_zone_provider.dart';
+import 'package:toko_game/providers/currency_provider.dart';
 import 'package:toko_game/services/api_service.dart';
 import 'package:toko_game/utils/constants.dart';
 import 'package:toko_game/widgets/transaction_detail_view.dart';
@@ -22,13 +23,6 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
   List<TransactionModel> _transactions = [];
   bool _isLoading = true;
   String? _errorMessage;
-
-  // Currency formatter
-  final currencyFormat = NumberFormat.currency(
-    locale: 'id_ID',
-    symbol: 'Rp ',
-    decimalDigits: 0,
-  );
 
   @override
   void initState() {
@@ -535,6 +529,7 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
 
   Widget _buildTransactionCard(TransactionModel transaction) {
     final timeZoneProvider = Provider.of<TimeZoneProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
 
     // Convert transaction date to selected time zone
     final utcDate = transaction.createdAt.toUtc();
@@ -736,9 +731,10 @@ class _TransactionHistoryScreenState extends State<TransactionHistoryScreen> {
                     ),
                   ),
 
-                  // Total amount
+                  // Total amount with currency conversion
                   Text(
-                    currencyFormat.format(transaction.totalAmount),
+                    currencyProvider.formatPrice(
+                        currencyProvider.convertPrice(transaction.totalAmount)),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:toko_game/models/game_model.dart';
+import 'package:toko_game/providers/currency_provider.dart';
 import 'package:toko_game/services/api_service.dart';
 import 'package:toko_game/utils/constants.dart';
 import 'package:toko_game/widgets/price_text.dart';
@@ -315,19 +317,25 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           ),
                         ),
                         const SizedBox(width: 4), // Reduce spacing
-                        // Price - limit width to prevent overflow
+                        // Price - use currency provider directly
                         Container(
                           constraints: BoxConstraints(maxWidth: 80),
-                          child: PriceText(
-                            priceInIdr: game.price,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primaryColor,
-                              fontSize: 12,
-                            ),
-                            textAlign: TextAlign.right,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          child: Consumer<CurrencyProvider>(
+                            builder: (context, currencyProvider, child) {
+                              return Text(
+                                currencyProvider.formatPrice(
+                                  currencyProvider.convertPrice(game.price),
+                                ),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryColor,
+                                  fontSize: 12,
+                                ),
+                                textAlign: TextAlign.right,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              );
+                            },
                           ),
                         ),
                       ],

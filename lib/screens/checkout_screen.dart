@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:toko_game/providers/auth_provider.dart';
 import 'package:toko_game/providers/cart_provider.dart';
+import 'package:toko_game/providers/currency_provider.dart';
 import 'package:toko_game/screens/home_screen.dart';
 import 'package:toko_game/services/api_service.dart';
 import 'package:toko_game/utils/constants.dart';
@@ -293,13 +294,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final cartProvider = Provider.of<CartProvider>(context);
+    final currencyProvider = Provider.of<CurrencyProvider>(context);
     final cartItems = cartProvider.items;
-
-    final currencyFormat = NumberFormat.currency(
-      locale: 'id_ID',
-      symbol: 'Rp ',
-      decimalDigits: 0,
-    );
 
     final hasDigitalItems = cartProvider.hasDigitalItems();
     final hasPhysicalItems = cartProvider.hasPhysicalItems();
@@ -362,9 +358,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            PriceText(
-                                              priceInIdr:
+                                            Text(
+                                              currencyProvider.formatPrice(
+                                                currencyProvider.convertPrice(
                                                   item.price * item.quantity,
+                                                ),
+                                              ),
                                               style: const TextStyle(
                                                 fontWeight: FontWeight.bold,
                                               ),
@@ -389,8 +388,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                           fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                      PriceText(
-                                        priceInIdr: cartProvider.totalAmount,
+                                      Text(
+                                        currencyProvider.formatPrice(
+                                          currencyProvider.convertPrice(
+                                            cartProvider.totalAmount,
+                                          ),
+                                        ),
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
