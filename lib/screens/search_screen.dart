@@ -15,31 +15,31 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ApiService _apiService = ApiService();
-  
+
   List<GameModel> _searchResults = [];
   bool _isLoading = false;
   String? _error;
   bool _hasSearched = false;
-  
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _performSearch() async {
     final query = _searchController.text.trim();
     if (query.isEmpty) return;
-    
+
     setState(() {
       _isLoading = true;
       _error = null;
       _hasSearched = true;
     });
-    
+
     try {
       final results = await _apiService.searchGames(query);
-      
+
       setState(() {
         _searchResults = results;
         _isLoading = false;
@@ -51,7 +51,7 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,7 +92,7 @@ class _SearchScreenState extends State<SearchScreen> {
               },
             ),
           ),
-          
+
           // Search button
           if (_searchController.text.isNotEmpty)
             Padding(
@@ -123,7 +123,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-          
+
           // Results
           Expanded(
             child: _isLoading
@@ -194,7 +194,8 @@ class _SearchScreenState extends State<SearchScreen> {
                               )
                             : GridView.builder(
                                 padding: const EdgeInsets.all(16),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
                                   crossAxisCount: 2,
                                   childAspectRatio: 0.7,
                                   crossAxisSpacing: 12,
@@ -208,7 +209,8 @@ class _SearchScreenState extends State<SearchScreen> {
                                     onTap: () {
                                       Navigator.of(context).push(
                                         MaterialPageRoute(
-                                          builder: (context) => GameDetailScreen(
+                                          builder: (context) =>
+                                              GameDetailScreen(
                                             gameId: game.id,
                                           ),
                                         ),

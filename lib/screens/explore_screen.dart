@@ -13,16 +13,25 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   final ApiService _apiService = ApiService();
+  final TextEditingController _searchController = TextEditingController();
   List<GameModel> _games = [];
+  List<GameModel> _filteredGames = [];
   List<String> _categories = [];
   String _selectedCategory = 'All';
   bool _isLoading = true;
   String? _error;
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _loadCategoriesAndGames();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCategoriesAndGames() async {
@@ -38,6 +47,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         setState(() {
           _categories = ['All', ...categories];
           _games = games;
+          _filteredGames = games;
           _isLoading = false;
         });
       }
@@ -51,32 +61,40 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
+  void _filterGames() {
+    setState(() {
+      List<GameModel> filtered = _games;
+
+      // Filter by category first
+      if (_selectedCategory != 'All') {
+        filtered =
+            filtered.where((g) => g.category == _selectedCategory).toList();
+      }
+
+      // Then filter by search query
+      if (_searchController.text.isNotEmpty) {
+        final query = _searchController.text.toLowerCase();
+        filtered = filtered
+            .where((game) =>
+                game.title.toLowerCase().contains(query) ||
+                game.category.toLowerCase().contains(query) ||
+                game.platform.toLowerCase().contains(query))
+            .toList();
+      }
+
+      _filteredGames = filtered;
+    });
+  }
+
   Future<void> _filterByCategory(String category) async {
     setState(() {
       _selectedCategory = category;
-      _isLoading = true;
     });
-    try {
-      List<GameModel> games;
-      if (category == 'All') {
-        games = await _apiService.getGames(limit: 100);
-      } else {
-        // Filter locally if API doesn't support category filter
-        final allGames = await _apiService.getGames(limit: 100);
-        games = allGames.where((g) => g.category == category).toList();
-      }
-      if (mounted) {
-        setState(() {
-          _games = games;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Failed to filter games: ${e.toString()}';
-        _isLoading = false;
-      });
-    }
+    _filterGames();
+  }
+
+  void _onSearchChanged(String query) {
+    _filterGames();
   }
 
   @override
@@ -84,14 +102,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Explore Games'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              Navigator.of(context).pushNamed('/search');
-            },
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -112,6 +122,35 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   onRefresh: _loadCategoriesAndGames,
                   child: Column(
                     children: [
+                      // Search bar
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search games...',
+                            prefixIcon: const Icon(Icons.search),
+                            suffixIcon: _searchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _filterGames();
+                                    },
+                                  )
+                                : null,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
+                              horizontal: 16,
+                            ),
+                          ),
+                          onChanged: _onSearchChanged,
+                        ),
+                      ),
+
                       // Category filter
                       if (_categories.isNotEmpty)
                         SizedBox(
@@ -142,9 +181,31 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             },
                           ),
                         ),
+
                       Expanded(
-                        child: _games.isEmpty
-                            ? const Center(child: Text('No games found'))
+                        child: _filteredGames.isEmpty
+                            ? Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.search_off,
+                                      size: 80,
+                                      color: Colors.grey[400],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    Text(
+                                      _searchController.text.isNotEmpty
+                                          ? 'No games found for "${_searchController.text}"'
+                                          : 'No games found',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
                             : _buildGameGrid(),
                       ),
                     ],
@@ -162,9 +223,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
-      itemCount: _games.length,
+      itemCount: _filteredGames.length,
       itemBuilder: (context, index) {
-        final game = _games[index];
+        final game = _filteredGames[index];
         return _buildGameCard(game);
       },
     );
